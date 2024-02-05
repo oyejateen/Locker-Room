@@ -1,0 +1,879 @@
+Hey gpt, look this is my chat application code so what it does it create one channel and use socket.io for chatting.
+i am sharing the code below
+server side index.js file:-
+const express = require('express');
+const socketio = require('socket.io');
+const http = require('http');
+const fs = require('fs');
+const app = express();
+const path = require('path');
+const server = http.createServer(app);
+const io = socketio(server);
+app.use(express.static(path.join(__dirname,'./views')));
+const greetings = [
+  "Welcome to the chat!",
+  "Glad to have you here!",
+  "Hey there, nice to see you!",
+  "Hello and welcome!",
+  "We're glad you joined us!",
+  "It's great to have you on board!",
+  "Welcome aboard!",
+  "We're happy to have you join us!",
+  "It's a pleasure to have you here!",
+  "We're glad you're here with us!"
+];
+
+const randomIndex = Math.floor(Math.random() * greetings.length);
+
+app.get("/", (req, res) => {
+  res.sendFile("main.html", {root: "./views"})
+})
+
+const activeUsers = new Set();
+
+io.on('connection', socket => {
+  console.log('a user connected');
+  
+  
+socket.on('set username', username => {
+    socket.username = username;
+    activeUsers.add(username);
+  socket.emit('current users', Array.from(activeUsers));
+    io.emit('new user', `${socket.username} has joined the chat, ${greetings[randomIndex]}`);
+  console.log(socket.username)
+  });
+
+  socket.on('send message', message => {
+    
+    io.emit('message', message);
+     
+  });
+  socket.on('send image1', imageData => {
+console.log(imageData)
+    const imageBuffer = Buffer.from(imageData.file);
+const image = imageBuffer.toString('base64');
+console.log(image)
+const name = imageData.username;
+    console.log(name)
+    io.emit('get image1', {
+      image: image,
+      name: name
+    });
+     
+  });
+  socket.on('send image', imageData => {
+console.log(imageData)
+    const imageBuffer = Buffer.from(imageData.file);
+const image = imageBuffer.toString('base64');
+console.log(image)
+const name = imageData.username;
+    console.log(name)
+    io.emit('get image', {
+      image: image,
+      name: name
+    });
+     
+  });
+
+socket.on('sendvideo', videoData => {
+  console.log("video data aaa gya")
+  console.log(videoData);
+    const imageBuffer = Buffer.from(videoData.file);
+const video = imageBuffer.toString('base64');
+console.log(video)
+  const name = videoData.username;
+  console.log(name);
+  io.emit('get video', {
+    video: video,
+    name: name
+  });
+});
+
+socket.on('sendaudio', audioData => {
+  console.log("audio data aaa gya")
+  console.log(audioData);
+    const imageBuffer = Buffer.from(audioData.file);
+const audio = imageBuffer.toString('base64');
+console.log(audio)
+  const name = audioData.username;
+  console.log(name);
+  io.emit('get audio', {
+    audio: audio,
+    name: name
+  });
+});
+
+
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+    if (socket.username) {
+      activeUsers.delete(socket.username);
+      io.emit('user disconnected', socket.username);
+    }
+  });
+});
+app.get('*', function(req, res){
+res.status(404).redirect('https://locker-room.iiiv.repl.co/upload')
+})
+const port = process.env.PORT || 0000;
+server.listen(port, () => {
+  console.log(`server listening on port ${port}`);
+});
+
+client side script.js file:-
+const socket = io();
+
+const form = document.getElementById('message-form');
+const input = document.getElementById('message-input');
+const messages = document.getElementById('messages');
+const loginForm = document.getElementById("login-form");
+const submitButton = document.getElementById("submit-button");
+
+submitButton.addEventListener("click", event => {
+  event.preventDefault();
+  console.log('button is clicked')
+
+  if (!document.getElementById("username").value) {
+    alert('Bruhh Please Enter Your Name first')
+  } else {
+    const chatContainer = document.querySelector('.chat-container');
+
+    const username = document.getElementById("username").value;
+    socket.emit('set username', username);
+
+    chatContainer.style.display = "flex";
+
+    document.querySelector('.secret').style.display = "none";
+    document.querySelectorAll('.secret *').forEach(element => {
+      element.style.display = 'none';
+    });
+
+  }
+});
+const clientName = document.getElementById("username").value;
+const fileInput = document.getElementById('file-input-image');
+const fileInput0 = document.getElementById('file-input-camera');
+const fileInput2 = document.getElementById('file-input-video');
+const fileInput3 = document.getElementById('file-input-audio');
+const addFileIconButton = document.getElementById('plusandcloseicon');
+const addFileButton = document.getElementById('add-file-button');
+const fileOptions = document.getElementById('file-options');
+
+addFileButton.addEventListener('click', () => {
+  console.log("add file button clicked");
+
+  if (fileOptions.style.display === 'none') {
+    console.log("displaying file options");
+    addFileIconButton.className = "fa fa-close";
+    fileOptions.style.display = 'flex';
+  } else if (fileOptions.style.display === 'flex') {
+    console.log("hiding file options");
+    addFileIconButton.className = "fa fa-plus";
+    fileOptions.style.display = 'none';
+  }
+});
+
+
+fileInput0.addEventListener('change', () => {
+  socket.emit('send image1', {
+    file: fileInput.files[0],
+    username: document.getElementById("username").value + ' has sent a photo'
+  })
+  console.log(fileInput.files);
+});
+fileInput.addEventListener('change', () => {
+  socket.emit('send image', {
+    file: fileInput.files[0],
+    username: document.getElementById("username").value + ' has sent a photo'
+  })
+  console.log(fileInput.files);
+});
+
+
+fileInput2.addEventListener('change', async () => {
+  const file = fileInput2.files[0];
+  console.log("new file has been uploaded", `\n\n`, file);
+  socket.emit('sendvideo', {
+    file: file,
+    username: document.getElementById("username").value + ' has sent a video'
+  });
+  console.log("bhai socket emit ker diya hai")
+});
+
+fileInput3.addEventListener('change', async () => {
+  const file = fileInput3.files[0];
+  console.log("new file has been uploaded", `\n\n`, file);
+  socket.emit('sendaudio', {
+    file: file,
+    username: document.getElementById("username").value + ' has sent an audio'
+  });
+  console.log("bhai socket emit ker diya hai")
+});
+
+const threeDots = document.getElementById("threeDots");
+const menuContainer = document.querySelector(".menu-container");
+const closeButton = document.querySelector(".close-button");
+const shareButton = document.querySelector(".share-button");
+
+
+threeDots.addEventListener("click", () => {
+  menuContainer.style.display = "flex";
+});
+
+closeButton.addEventListener("click", () => {
+  menuContainer.style.display = "none";
+});
+
+shareButton.addEventListener("click", async () => {
+  menuContainer.style.display = "none";
+
+  try {
+    await navigator.share({
+      url: window.location.href,
+      title: `Yo! join this completely anonymous room.`,
+    });
+  } catch (error) {
+    console.error('Error sharing:', error);
+  }
+});
+
+document.addEventListener("click", (event) => {
+  if (!menuContainer.contains(event.target) && !threeDots.contains(event.target)) {
+    menuContainer.style.display = "none";
+  }
+});
+
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  socket.emit('send message', (document.getElementById("username").value + ':  ' + input.value));
+  input.value = '';
+});
+const messages1 = document.querySelector('#messages');
+
+function scrollToBottom() {
+  const scrollHeight = messages.scrollHeight;
+  const scrollTop = messages.scrollTop;
+  const clientHeight = messages.clientHeight;
+  if (scrollTop + clientHeight >= scrollHeight) {
+    messages.scrollTo(0, scrollHeight);
+  }
+}
+socket.on('message', (message) => {
+  const li = document.createElement('li');
+  li.innerHTML = convertURLsToLinks(message);
+  li.style.color = 'black';
+  messages.appendChild(li);
+  scrollToBottom();
+});
+
+function convertURLsToLinks(message) {
+  const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gi;
+  const containsURL = urlRegex.test(message);
+  
+  if (containsURL) {
+    return message.replace(urlRegex, function(url) {
+      return '<a style="text-decoration:none;" href="' + url + '" target="_blank">' + url + '</a>';
+    });
+  } else {
+    return message;
+  }
+}
+
+/*socket.on('message', message => {
+
+  const li = document.createElement('li');
+  li.textContent = message;
+  li.style.color = "black";
+  messages.appendChild(li);
+  scrollToBottom();
+});*/
+socket.on('get image1', data => {
+  const li = document.createElement('li');
+  li.textContent = data.name;
+
+  const anchor = document.createElement('a');
+  anchor.href = 'data:image/*;base64,' + data.image;
+  anchor.target = '_blank';
+  anchor.style.textDecoration = 'none';
+  anchor.removeAttribute('download');
+  const img = document.createElement('img');
+  img.src = 'data:image/*;base64,' + data.image;
+  img.classList.add('image');
+  img.style.maxWidth = "300px";
+  img.style.maxHeight = "300px";
+
+  anchor.appendChild(img);
+  li.appendChild(anchor);
+
+  messages.appendChild(li);
+  scrollToBottom();
+});
+socket.on('get image', data => {
+  const li = document.createElement('li');
+  li.textContent = data.name;
+
+  const anchor = document.createElement('a');
+  anchor.href = 'data:image/*;base64,' + data.image;
+  anchor.target = '_blank';
+  anchor.style.textDecoration = 'none';
+  anchor.removeAttribute('download');
+  const img = document.createElement('img');
+  img.src = 'data:image/*;base64,' + data.image;
+  img.classList.add('image');
+  img.style.maxWidth = "300px";
+  img.style.maxHeight = "300px";
+
+  anchor.appendChild(img);
+  li.appendChild(anchor);
+
+  messages.appendChild(li);
+  scrollToBottom();
+});
+
+socket.on('get video', data => {
+  const li = document.createElement('li');
+  li.textContent = data.name;
+
+  const video = document.createElement('video');
+  video.classList.add('video');
+  video.controls = true;
+  video.style.maxWidth = "400px";
+  video.style.maxHeight = "300px";
+
+  const source = document.createElement('source');
+  source.src = 'data:video/*;base64,' + data.video;
+  source.type = 'video/mp4';
+
+  video.appendChild(source);
+  li.appendChild(video);
+  messages.appendChild(li);
+  scrollToBottom();
+});
+
+socket.on('get audio', data => {
+  const li = document.createElement('li');
+  li.textContent = data.name;
+
+  const audio = document.createElement('audio');
+  audio.classList.add('audio');
+  audio.controls = true;
+  audio.style.maxWidth = '400px';
+
+  const source = document.createElement('source');
+  source.src = 'data:audio/*;base64,' + data.audio;
+  source.type = 'audio/mp3';
+
+  audio.appendChild(source);
+  li.appendChild(audio);
+
+  messages.appendChild(li);
+  scrollToBottom();
+});
+
+
+const usersContainer = document.querySelector('.total-users');
+const users = new Set();
+
+function renderUsers() {
+  usersContainer.innerHTML = '';
+
+  for (const username of users) {
+    const listItem = document.createElement('li');
+    listItem.textContent = `• ${username}`;
+    listItem.style.margin = '5px';
+    listItem.style.marginLeft = '20px';
+    usersContainer.appendChild(listItem);
+  }
+}
+
+socket.on('current users', userList => {
+  for (const username of userList) {
+    users.add(username);
+  }
+  renderUsers();
+});
+
+socket.on('new user', message => {
+  const li = document.createElement('li');
+  li.innerHTML = `🎉 ${message}`;
+  li.id = 'new-user-message';
+  messages.appendChild(li);
+  const username = message.split(' ')[0];
+  users.add(username);
+  renderUsers();
+});
+
+socket.on('user disconnected', username => {
+  users.delete(username);
+  renderUsers();
+});
+client side index.htmk file:-
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="https://cdn.discordapp.com/attachments/1050293876847542312/1054294111567499284/Screenshot_2022-12-19-12-29-31-24-removebg-preview.png" type="image/x-icon">
+    <title>Chat Room</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="secret">
+    <h1>Chat Room</h1>
+   <form id="login-form">
+  <label for="username">Enter You Name:</label><br>
+  <input type="text" id="username" name="username" autocomplete="off" required><br>
+  <button type="submit" id="submit-button">Submit</button>
+    </form>
+
+      <p id="intro">Welcome to Chat Room, an end-to-end chat app, where users can share images and chat with each other in real-time. So why wait? Start chatting today and experience the convenience and fun of instant messaging on the go! </p>
+      
+      <p id="para">Copyright &copy; <a href="https://jatinxd.tk">Jatin</a></p>
+    </div>
+    
+      <div class="chat-container">
+        <div class="menu-container">
+  <div class="menu-card">
+    <ul>
+      <li class="share-button"><i class="fa fa-share-alt"></i> Share Room with others.</li>
+      <li style="color:red;" class="delete-button"><a style="color:red;" href="/"><i class="fa fa-sign-out"></i> Leave the Room.</a></li>
+      <li><i class="fa fa-users"> Available Members</i></li>
+      <li class="total-users"><i class="fa fa-users"> Available Members</i></li>
+    </ul>
+    <button class="close-button"><i class="fa fa-close"></i></button>
+  </div>
+        </div>
+  <div class="chat-header">
+    <a href="/">
+    <i class="fa fa-angle-left"></i>
+    </a>
+    <h1 id="characterName">Chat Room</h1>
+    <i id="threeDots" class="fa fa-ellipsis-v"></i>
+  </div>
+         
+  <div class="chat-messages">
+    <ul id="messages"></ul>
+    
+  </div>
+  <div class="chat-form">
+    <div id="file-options" style="display: none;">
+  <button type="button" id="camera-button">
+    <i class="fa fa-camera"></i>
+    <label for="file-input-camera">Camera</label>
+  </button>
+  <input type="file" id="file-input-camera" style="display: none;" capture="user">
+
+  <button type="button" id="image-button">
+    <i class="fa fa-picture-o"></i>
+    <label for="file-input-image">Image</label>
+  </button>
+  <input type="file" id="file-input-image" accept="image/*" style="display: none;">
+
+  <button type="button" id="video-button">
+    <i class="fa fa-video-camera"></i>
+    <label for="file-input-video">Video</label>
+  </button>
+  <input type="file" id="file-input-video" accept="video/*" style="display: none;">
+
+  <button type="button" id="document-button">
+    <i class="fa fa-microphone"></i>
+    <label for="file-input-audio">Audio</label>
+  </button>
+  <input type="file" id="file-input-audio" accept="audio/*" style="display: none;">
+</div>
+    <form id="message-form">
+      <input id="message-input" type="text" placeholder="Enter your message..." autocomplete="off" required/>
+      <button type="button" id="add-file-button"><i id="plusandcloseicon" class="fa fa-plus"></i></button>
+      <button type="submit"><i class="fa fa-send-o"></i></button>
+ 
+    </form>
+
+  </div>
+</div>
+     <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+
+  </body>
+</html>
+
+but what i want is to make it support multiple channel as i said you about the features earlier that user can join and create channel and then chat process will be same. i want you to use my multiple chat system code that is below
+main index.js file
+const express = require('express');
+const app = express();
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
+const shortid = require('shortid');
+const cookieParser = require('cookie-parser');
+
+// Middleware
+app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(cookieParser());
+
+// Data structures to store user accounts and channels
+const users = {};
+const channels = {};
+
+// Route for rendering the main page
+app.get('/', (req, res) => {
+  const { userId } = req.cookies;
+  if (userId && users[userId]) {
+    res.redirect('/dashboard');
+  } else {
+    res.sendFile(__dirname + '/public/index.html');
+  }
+});
+
+// User signup
+app.post('/signup', (req, res) => {
+  const { username } = req.body;
+  const userId = shortid.generate();
+
+  // Create user account
+  users[userId] = {
+    id: userId,
+    username,
+    channels: [],
+  };
+
+  // Set user ID cookie
+  res.cookie('userId', userId);
+
+  res.redirect('/dashboard');
+});
+
+// User login
+app.post('/login', (req, res) => {
+  const { username } = req.body;
+
+  // Find the user account
+  const user = Object.values(users).find((u) => u.username === username);
+
+  if (user) {
+    // Set user ID cookie
+    res.cookie('userId', user.id);
+
+    res.redirect('/dashboard');
+  } else {
+    res.redirect('/');
+  }
+});
+
+// Dashboard
+app.get('/dashboard', (req, res) => {
+  const { userId } = req.cookies;
+
+  // Find the user account
+  const user = users[userId];
+
+  if (user) {
+    res.sendFile(__dirname + '/public/dashboard.html');
+  } else {
+    res.redirect('/');
+  }
+});
+
+// Create channel
+app.post('/dashboard/create', (req, res) => {
+  const { userId } = req.cookies;
+  const { channelName } = req.body;
+  const channelId = shortid.generate();
+
+  // Create channel
+  channels[channelId] = {
+    id: channelId,
+    name: channelName,
+    users: [userId],
+  };
+
+  // Update user's channels
+  users[userId].channels.push(channelId);
+
+  res.redirect(`/channel/${channelId}`);
+});
+
+// Join channel
+app.post('/dashboard/join', (req, res) => {
+  const { userId } = req.cookies;
+  const { channelId } = req.body;
+
+  // Find the channel
+  const channel = channels[channelId];
+
+  if (channel && !channel.users.includes(userId)) {
+    // Add user to the channel
+    channel.users.push(userId);
+    users[userId].channels.push(channelId);
+  }
+
+  res.redirect(`/channel/${channelId}`);
+});
+
+// Channel page
+app.get('/channel/:channelId', (req, res) => {
+  const { userId } = req.cookies;
+  const { channelId } = req.params;
+
+  // Find the channel
+  const channel = channels[channelId];
+
+  if (channel && channel.users.includes(userId)) {
+    res.sendFile(__dirname + '/public/channel.html');
+  } else {
+    res.redirect('/dashboard');
+  }
+});
+
+// Socket.io connection
+io.on('connection', (socket) => {
+  // User joins a channel
+  socket.on('join', (channelId) => {
+    const { userId } = socket.request.cookies;
+
+    // Find the channel
+    const channel = channels[channelId];
+
+    if (channel && !channel.users.includes(userId)) {
+      // Add user to the channel
+      channel.users.push(userId);
+    }
+
+    socket.join(channelId);
+  });
+
+  // User sends a message
+  socket.on('message', (data) => {
+    const { userId } = socket.request.cookies;
+
+    // Broadcast the message to all users in the channel
+    io.to(data.channelId).emit('message', {
+      username: users[userId].username,
+      message: data.message,
+    });
+  });
+
+  // User disconnects
+  socket.on('disconnect', () => {
+    const { userId } = socket.request.cookies;
+
+    // Remove user from channels
+    Object.values(channels).forEach((channel) => {
+      const index = channel.users.indexOf(userId);
+      if (index !== -1) {
+        channel.users.splice(index, 1);
+      }
+    });
+
+    // Remove user account
+    delete users[userId];
+  });
+});
+
+// Start the server
+const port = process.env.PORT || 0000;
+http.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});
+public folder index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat App</title>
+</head>
+<body>
+  <h1>Welcome to the Chat App</h1>
+
+  <h2>Signup</h2>
+  <form action="/signup" method="post">
+    <input type="text" name="username" placeholder="Enter Username" required />
+    <button type="submit">Sign Up</button>
+  </form>
+
+  <h2>Login</h2>
+  <form action="/login" method="post">
+    <input type="text" name="username" placeholder="Enter Username" required />
+    <button type="submit">Login</button>
+  </form>
+</body>
+</html>
+dashboard.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+</head>
+<body>
+  <h1>Welcome to the Dashboard, <span id="username"></span>!</h1>
+
+  <h2>Your Channels:</h2>
+  <ul id="channel-list"></ul>
+
+  <h2>Create Channel</h2>
+  <form action="/dashboard/create" method="post">
+    <input type="text" name="channelName" placeholder="Enter Channel Name" required />
+    <button type="submit">Create Channel</button>
+  </form>
+
+  <h2>Join Channel</h2>
+  <form action="/dashboard/join" method="post">
+    <input type="text" name="channelId" placeholder="Enter Channel ID" required />
+    <button type="submit">Join Channel</button>
+  </form>
+
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>
+
+channel.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Channel</title>
+</head>
+<body>
+  <h1>Welcome to Channel <span id="channel-name"></span>!</h1>
+  <h3>Channel ID: <span id="channel-id"></span></h3>
+
+  <div id="message-list"></div>
+
+  <h2>Send Message</h2>
+  <form id="message-form">
+    <input type="text" name="message" placeholder="Enter Message" required />
+    <button type="submit">Send</button>
+  </form>
+
+  <script src="/js/channel.js"></script>
+  <script>
+    const socket = io();
+const messageList = document.getElementById('message-list');
+const channelNameElement = document.getElementById('channel-name');
+const channelIdElement = document.getElementById('channel-id');
+const messageForm = document.getElementById('message-form');
+
+// Get channel ID from URL
+const channelId = window.location.pathname.split('/').pop();
+
+// Get channel object from server
+fetch(`/channel/${channelId}`)
+  .then((response) => response.json())
+  .then((data) => {
+    channelNameElement.textContent = data.name;
+    channelIdElement.textContent = data.id;
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+
+// Event listener for sending a message
+messageForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const messageInput = document.querySelector('input[name="message"]');
+  const message = messageInput.value.trim();
+
+  if (message !== '') {
+    socket.emit('message', {
+      channelId,
+      message,
+    });
+    messageInput.value = '';
+  }
+});
+
+// Event listener for receiving a message
+socket.on('message', (data) => {
+  const messageElement = document.createElement('div');
+  messageElement.innerHTML = `<strong>${data.username}: </strong>${data.message}`;
+  messageList.appendChild(messageElement);
+});
+
+  </script>
+</body>
+</html>
+js dashboard.js
+document.addEventListener('DOMContentLoaded', () => {
+  const usernameElement = document.getElementById('username');
+  const channelListElement = document.getElementById('channel-list');
+
+  // Get user ID from cookie
+  const userId = getCookie('userId');
+
+  // Get user object from server
+  fetch(`/user/${userId}`)
+    .then((response) => response.json())
+    .then((data) => {
+      usernameElement.textContent = data.username;
+
+      // Populate channel list
+      data.channels.forEach((channelId) => {
+        const li = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = `/channel/${channelId}`;
+        link.textContent = channelId;
+        li.appendChild(link);
+        channelListElement.appendChild(li);
+      });
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+});
+
+// Function to get cookie by name
+function getCookie(name) {
+  const value = '; ' + document.cookie;
+  const parts = value.split('; ' + name + '=');
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+ channel.js
+const socket = io();
+const messageList = document.getElementById('message-list');
+const channelNameElement = document.getElementById('channel-name');
+const channelIdElement = document.getElementById('channel-id');
+const messageForm = document.getElementById('message-form');
+
+// Get channel ID from URL
+const channelId = window.location.pathname.split('/').pop();
+
+// Get channel object from server
+fetch(`/channel/${channelId}`)
+  .then((response) => response.json())
+  .then((data) => {
+    channelNameElement.textContent = data.name;
+    channelIdElement.textContent = data.id;
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+
+// Event listener for sending a message
+messageForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const messageInput = document.querySelector('input[name="message"]');
+  const message = messageInput.value.trim();
+
+  if (message !== '') {
+    socket.emit('message', {
+      channelId,
+      message,
+    });
+    messageInput.value = '';
+  }
+});
+
+// Event listener for receiving a message
+socket.on('message', (data) => {
+  const messageElement = document.createElement('div');
+  messageElement.innerHTML = `<strong>${data.username}: </strong>${data.message}`;
+  messageList.appendChild(messageElement);
+});

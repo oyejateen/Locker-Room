@@ -1,11 +1,12 @@
 const express = require('express');
 const socketio = require('socket.io');
 const http = require('http');
-
+const fs = require('fs');
 const app = express();
+const path = require('path');
 const server = http.createServer(app);
 const io = socketio(server);
-var name;
+app.use(express.static(path.join(__dirname,'./views')));
 const greetings = [
   "Welcome to the chat!",
   "Glad to have you here!",
@@ -19,24 +20,22 @@ const greetings = [
   "We're glad you're here with us!"
 ];
 
-// Use Math.random() to randomly select an index from the greetings array
 const randomIndex = Math.floor(Math.random() * greetings.length);
 
 app.get("/", (req, res) => {
-  res.render("main.ejs", {root: "."})
+  res.sendFile("main.html", {root: "./views"})
 })
+
+const activeUsers = new Set();
+
 io.on('connection', socket => {
   console.log('a user connected');
   
-  /*socket.on('joining msg', (username) => {
-    name = username
-socket.broadcast.emit('new user', `${name} joined the chat, ${greetings[randomIndex]}`);
-console.log(name, username)
-
-  });*/
 socket.on('set username', username => {
     socket.username = username;
-    socket.broadcast.emit('new user', `${socket.username} has joined the chat, ${greetings[randomIndex]}`);
+    activeUsers.add(username);
+  socket.emit('current users', Array.from(activeUsers));
+    io.emit('new user', `${socket.username} has joined the chat, ${greetings[randomIndex]}`);
   console.log(socket.username)
   });
 
@@ -45,13 +44,72 @@ socket.on('set username', username => {
     io.emit('message', message);
      
   });
+  socket.on('send image1', imageData => {
+console.log(imageData)
+    const imageBuffer = Buffer.from(imageData.file);
+const image = imageBuffer.toString('base64');
+console.log(image)
+const name = imageData.username;
+    console.log(name)
+    io.emit('get image1', {
+      image: image,
+      name: name
+    });
+     
+  });
+  socket.on('send image', imageData => {
+console.log(imageData)
+    const imageBuffer = Buffer.from(imageData.file);
+const image = imageBuffer.toString('base64');
+console.log(image)
+const name = imageData.username;
+    console.log(name)
+    io.emit('get image', {
+      image: image,
+      name: name
+    });
+     
+  });
+
+socket.on('sendvideo', videoData => {
+  console.log("video data aaa gya")
+  console.log(videoData);
+    const imageBuffer = Buffer.from(videoData.file);
+const video = imageBuffer.toString('base64');
+console.log(video)
+  const name = videoData.username;
+  console.log(name);
+  io.emit('get video', {
+    video: video,
+    name: name
+  });
+});
+
+socket.on('sendaudio', audioData => {
+  console.log("audio data aaa gya")
+  console.log(audioData);
+    const imageBuffer = Buffer.from(audioData.file);
+const audio = imageBuffer.toString('base64');
+console.log(audio)
+  const name = audioData.username;
+  console.log(name);
+  io.emit('get audio', {
+    audio: audio,
+    name: name
+  });
+});
+
 
   socket.on('disconnect', () => {
     console.log('user disconnected');
+    if (socket.username) {
+      activeUsers.delete(socket.username);
+      io.emit('user disconnected', socket.username);
+    }
   });
 });
 app.get('*', function(req, res){
-res.status(404).redirect('https://timecapsule.jatinsharma24.repl.co/upload')
+res.status(404).redirect('https://locker-room.iiiv.repl.co/upload')
 })
 const port = process.env.PORT || 0000;
 server.listen(port, () => {

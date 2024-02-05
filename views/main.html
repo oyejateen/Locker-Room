@@ -1,0 +1,106 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="twitter:site" content="website" />
+        <meta name="twitter:title" content="Chat Rooms" />
+        <meta name="twitter:description" content="A fully encrypted Chat room." />
+        <meta name="twitter:image" content="https://cdn.discordapp.com/attachments/1050293876847542312/1054294111567499284/Screenshot_2022-12-19-12-29-31-24-removebg-preview.png" />
+
+        <meta property='og:title' content='Chat Rooms' />
+        <meta property='og:type' content="website" />
+        <meta property='og:description' content='A fully encrypted chat room.' />
+        <meta property="og:image" content='https://cdn.discordapp.com/attachments/1050293876847542312/1054294111567499284/Screenshot_2022-12-19-12-29-31-24-removebg-preview.png' />
+        <meta name="theme-color" content="#82c9f5" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="https://cdn.discordapp.com/attachments/1050293876847542312/1054294111567499284/Screenshot_2022-12-19-12-29-31-24-removebg-preview.png" type="image/x-icon">
+    <title>Chat Room</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="secret">
+    <h1>Chat Room</h1>
+   <form id="login-form">
+  <label for="username">Enter You Name:</label><br>
+  <input type="text" id="username" name="username" autocomplete="off" required><br>
+  <button type="submit" id="submit-button">Submit</button>
+    </form>
+
+      <p id="intro">Welcome to Chat Room, an end-to-end chat app, where users can share images and chat with each other in real-time. So why wait? Start chatting today and experience the convenience and fun of instant messaging on the go! </p>
+      
+      <p id="para">Copyright &copy; <a href="https://jatinxd.tk">Jatin</a></p>
+    </div>
+    
+      <div class="chat-container">
+        <div class="menu-container">
+  <div class="menu-card">
+    <ul>
+      <li class="share-button"><i class="fa fa-share-alt"></i> Share Room with others.</li>
+      <li style="color:red;" class="delete-button"><a style="color:red;" href="/"><i class="fa fa-sign-out"></i> Leave the Room.</a></li>
+      <li><i class="fa fa-users"> Available Members</i></li>
+      <li class="total-users"><i class="fa fa-users"> Available Members</i></li>
+    </ul>
+    <button class="close-button"><i class="fa fa-close"></i></button>
+  </div>
+        </div>
+  <div class="chat-header">
+    <a href="/">
+    <i class="fa fa-angle-left"></i>
+    </a>
+    <h1 id="characterName">Chat Room</h1>
+    <i id="threeDots" class="fa fa-ellipsis-v"></i>
+  </div>
+         
+  <div class="chat-messages">
+    <ul id="messages"></ul>
+    
+  </div>
+  <div class="chat-form">
+    <div id="file-options" style="display: none;">
+  <button type="button" id="camera-button">
+    <i class="fa fa-camera"></i>
+    <label for="file-input-camera">Camera</label>
+  </button>
+  <input type="file" id="file-input-camera" style="display: none;" capture="user">
+
+  <button type="button" id="image-button">
+    <i class="fa fa-picture-o"></i>
+    <label for="file-input-image">Image</label>
+  </button>
+  <input type="file" id="file-input-image" accept="image/*" style="display: none;">
+
+  <button type="button" id="video-button">
+    <i class="fa fa-video-camera"></i>
+    <label for="file-input-video">Video</label>
+  </button>
+  <input type="file" id="file-input-video" accept="video/*" style="display: none;">
+
+  <button type="button" id="document-button">
+    <i class="fa fa-microphone"></i>
+    <label for="file-input-audio">Audio</label>
+  </button>
+  <input type="file" id="file-input-audio" accept="audio/*" style="display: none;">
+      <button type="button" id="document-button">
+        <i class="fa fa-file"></i>
+        <label for="file-input-docs">Docs</label>
+      </button>
+      <input type="file" id="file-input-docs" accept="document/*" style="display: none;">
+</div>
+    <form id="message-form">
+      <input id="message-input" type="text" placeholder="Enter your message..." autocomplete="off" required/>
+      <button type="button" id="add-file-button"><i id="plusandcloseicon" class="fa fa-plus"></i></button>
+      <button type="submit"><i class="fa fa-send-o"></i></button>
+ 
+    </form>
+
+  </div>
+</div>
+     <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+
+  </body>
+</html>
